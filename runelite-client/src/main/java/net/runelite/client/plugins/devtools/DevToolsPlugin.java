@@ -29,19 +29,17 @@ import ch.qos.logback.classic.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import com.google.inject.Provides;
+
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.min;
+
+import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import javax.inject.Inject;
 import lombok.Getter;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.Experience;
-import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
-import net.runelite.api.NPC;
-import net.runelite.api.Player;
-import net.runelite.api.Skill;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.BoostedLevelChanged;
 import net.runelite.api.events.CommandExecuted;
@@ -49,6 +47,7 @@ import net.runelite.api.events.ExperienceChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.kit.KitType;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -65,7 +64,7 @@ import org.slf4j.LoggerFactory;
 @PluginDescriptor(
 	name = "Developer Tools",
 	tags = {"panel"},
-	developerPlugin = true
+	developerPlugin = false
 )
 @Getter
 public class DevToolsPlugin extends Plugin
@@ -75,6 +74,9 @@ public class DevToolsPlugin extends Plugin
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -139,7 +141,6 @@ public class DevToolsPlugin extends Plugin
 	{
 		players = new DevToolsButton("Players");
 		npcs = new DevToolsButton("NPCs");
-
 		groundItems = new DevToolsButton("Ground Items");
 		groundObjects = new DevToolsButton("Ground Objects");
 		gameObjects = new DevToolsButton("Game Objects");
@@ -245,6 +246,17 @@ public class DevToolsPlugin extends Plugin
 				eventBus.post(varbitChanged); // fake event
 				break;
 			}
+			case "setvar":
+			{
+				int varp = Integer.parseInt(args[0]);
+				int value = Integer.parseInt(args[1]);
+				client.setVarbitValue(client.getVarps(),varp,value);
+
+				//client.setVarpValue(client.getVarps(), varp, value);
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Set VarBit " + varp + " to " + value, null);
+				eventBus.post(new VarbitChanged()); // fake event
+				break;
+			}
 			case "getvarb":
 			{
 				int varbit = Integer.parseInt(args[0]);
@@ -334,6 +346,24 @@ public class DevToolsPlugin extends Plugin
 				Player player = client.getLocalPlayer();
 				player.getPlayerComposition().getEquipmentIds()[KitType.CAPE.getIndex()] = id + 512;
 				player.getPlayerComposition().setHash();
+				break;
+			}
+			case "wiki":
+			{
+				String search = "";
+				for(String s : args){
+					search = search + s;
+				}
+				String url = "https://oldschool.runescape.wiki/w/Special:Search?search=" + search;
+
+				try {
+					Desktop desktop = java.awt.Desktop.getDesktop();
+					URI oURL = new URI(url);
+					desktop.browse(oURL);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
 				break;
 			}
 		}

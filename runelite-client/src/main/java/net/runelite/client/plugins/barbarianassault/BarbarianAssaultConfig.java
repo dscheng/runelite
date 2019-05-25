@@ -51,4 +51,13 @@ public interface BarbarianAssaultConfig extends Config
 	{
 		return true;
 	}
+	@ConfigItem(
+			keyName = "removeUnused",
+			name = "Remove incorrect calls",
+			description = "Removes incorrect calls for Role horn"
+	)
+	default boolean removeWrong()
+	{
+		return true;
+	}
 }

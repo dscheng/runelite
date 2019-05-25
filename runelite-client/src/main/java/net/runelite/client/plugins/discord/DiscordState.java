@@ -173,12 +173,11 @@ class DiscordState
 		}
 
 		// Replace snapshot with + to make tooltip shorter (so it will span only 1 line)
-		final String versionShortHand = properties.getVersion().replace("-SNAPSHOT", "+");
 
 		final DiscordPresence.DiscordPresenceBuilder presenceBuilder = DiscordPresence.builder()
 			.state(MoreObjects.firstNonNull(state, ""))
 			.details(MoreObjects.firstNonNull(details, ""))
-			.largeImageText(properties.getTitle() + " v" + versionShortHand)
+			.largeImageText(properties.getTitle())
 			.startTimestamp(event.getStart())
 			.smallImageKey(imageKey)
 			.partyMax(PARTY_MAX)

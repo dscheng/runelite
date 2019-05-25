@@ -172,6 +172,7 @@ class DevToolsOverlay extends Overlay
 		List<NPC> npcs = client.getNpcs();
 		for (NPC npc : npcs)
 		{
+
 			NPCComposition composition = npc.getComposition();
 			Color color = composition.getCombatLevel() > 1 ? YELLOW : ORANGE;
 			if (composition.getConfigs() != null)
@@ -192,8 +193,8 @@ class DevToolsOverlay extends Overlay
 				composition.getId(),
 				npc.getAnimation(),
 				npc.getGraphic());
+				OverlayUtil.renderActorOverlay(graphics, npc, text, color);
 
-			OverlayUtil.renderActorOverlay(graphics, npc, text, color);
 		}
 	}
 

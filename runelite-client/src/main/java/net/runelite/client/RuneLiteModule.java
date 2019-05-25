@@ -28,6 +28,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import java.applet.Applet;
+import java.io.FileNotFoundException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.annotation.Nullable;
@@ -98,8 +99,7 @@ public class RuneLiteModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	Applet provideApplet(ClientLoader clientLoader)
-	{
+	Applet provideApplet(ClientLoader clientLoader) throws FileNotFoundException {
 		return clientLoader.load();
 	}
 

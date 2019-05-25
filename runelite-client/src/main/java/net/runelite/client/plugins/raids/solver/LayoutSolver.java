@@ -80,7 +80,7 @@ public class LayoutSolver
 		"SFCCPC.PCSCPF - #WSEENES#WWWNEEE",
 		"FSPCC.PSCCF - #WWWSEE#ENWWSW",
 		"FSCCP.PCSCF - #ENWWWS#NEESEN",
-		"SCPFC.CCSSF - #NEESEN#WSWWNE",
+		"SCPFC.CCSSF - #NEESEN#WSWWNE"
 	};
 
 	public LayoutSolver()
@@ -115,6 +115,8 @@ public class LayoutSolver
 				solution = layout;
 				matches++;
 				log.debug("Found matching layout: " + layout.toCode());
+			}else{
+
 			}
 		}
 

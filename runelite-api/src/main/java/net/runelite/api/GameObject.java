@@ -42,7 +42,7 @@ public interface GameObject extends TileObject
 	 * @return the minimum scene coordinate
 	 */
 	Point getSceneMinLocation();
-
+	int getFlags();
 	/**
 	 * Gets the maximum x and y scene coordinate pair for this game object.
 	 * <p>

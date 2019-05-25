@@ -33,7 +33,7 @@ import net.runelite.client.plugins.Plugin;
 
 public abstract class InfoBox
 {
-	@Getter(AccessLevel.PACKAGE)
+	@Getter(AccessLevel.PUBLIC)
 	private final Plugin plugin;
 
 	@Getter

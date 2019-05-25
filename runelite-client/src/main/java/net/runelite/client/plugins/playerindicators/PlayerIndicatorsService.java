@@ -29,6 +29,7 @@ import java.util.function.BiConsumer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
+import net.runelite.api.Friend;
 import net.runelite.api.Player;
 
 @Singleton
@@ -60,9 +61,18 @@ public class PlayerIndicatorsService
 			{
 				continue;
 			}
-
 			boolean isClanMember = player.isClanMember();
-
+			if(config.drawOffline()) {
+				for (Friend f : client.getFriends()) {
+					if (f == null) continue;
+					if (f.getName() == null) continue;
+					String test = f.getName().replace('\u00A0', ' ');
+					String testR = player.getName();
+					if (test.equals(testR)) {
+						consumer.accept(player, config.getFriendColor());
+					}
+				}
+			}
 			if (player == localPlayer)
 			{
 				if (config.highlightOwnPlayer())

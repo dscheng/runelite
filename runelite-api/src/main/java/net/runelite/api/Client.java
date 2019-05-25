@@ -1547,7 +1547,8 @@ public interface Client extends GameEngine
 	 * Opens in-game world hopper interface
 	 */
 	void openWorldHopper();
-
+	int getPlayerIndexesCount();
+	int[] getPlayerIndices();
 	/**
 	 * Hops using in-game world hopper widget to another world
 	 * @param world target world to hop to

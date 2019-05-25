@@ -78,9 +78,9 @@ public class RaidsOverlay extends Overlay
 		if (plugin.getRaid() == null || plugin.getRaid().getLayout() == null)
 		{
 			panelComponent.getChildren().add(TitleComponent.builder()
-				.text("Unable to scout this raid!")
-				.color(Color.RED)
-				.build());
+					.text("Unable to scout this raid!")
+					.color(Color.RED)
+					.build());
 
 			return panelComponent.render(graphics);
 		}
@@ -94,9 +94,9 @@ public class RaidsOverlay extends Overlay
 		}
 
 		panelComponent.getChildren().add(TitleComponent.builder()
-			.text(layout)
-			.color(color)
-			.build());
+				.text(layout)
+				.color(color)
+				.build());
 
 		int bossMatches = 0;
 		int bossCount = 0;
@@ -133,10 +133,10 @@ public class RaidsOverlay extends Overlay
 					}
 
 					panelComponent.getChildren().add(LineComponent.builder()
-						.left(room.getType().getName())
-						.right(room.getBoss().getName())
-						.rightColor(color)
-						.build());
+							.left(room.getType().getName())
+							.right(room.getBoss().getName())
+							.rightColor(color)
+							.build());
 
 					break;
 
@@ -151,10 +151,10 @@ public class RaidsOverlay extends Overlay
 					}
 
 					panelComponent.getChildren().add(LineComponent.builder()
-						.left(room.getType().getName())
-						.right(room.getPuzzle().getName())
-						.rightColor(color)
-						.build());
+							.left(room.getType().getName())
+							.right(room.getPuzzle().getName())
+							.rightColor(color)
+							.build());
 					break;
 			}
 		}

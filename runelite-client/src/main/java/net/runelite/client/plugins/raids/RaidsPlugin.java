@@ -26,10 +26,20 @@ package net.runelite.client.plugins.raids;
 
 import com.google.inject.Binder;
 import com.google.inject.Provides;
+
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
@@ -46,9 +56,9 @@ import static net.runelite.api.SpriteID.TAB_QUESTS_BROWN_RAIDING_PARTY;
 import net.runelite.api.Tile;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.ConfigChanged;
-import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.events.*;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -56,14 +66,19 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.SkillIconManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.raids.solver.Layout;
 import net.runelite.client.plugins.raids.solver.LayoutSolver;
 import net.runelite.client.plugins.raids.solver.RotationSolver;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.infobox.InfoBox;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 @PluginDescriptor(
@@ -77,7 +92,10 @@ public class RaidsPlugin extends Plugin
 	private static final int LOBBY_PLANE = 3;
 	private static final String RAID_START_MESSAGE = "The raid has begun!";
 	private static final String LEVEL_COMPLETE_MESSAGE = "level complete!";
+	private static final String KC_MESSAGE = "Your completed Chambers of Xeric count is:";
+	private static final String KC_MESSAGECM = "Your completed Chambers of Xeric Challenge Mode count is:";
 	private static final String RAID_COMPLETE_MESSAGE = "Congratulations - your raid is complete!";
+	private static final String RAID_COMPLETE_MESSAGE2 = "Congratulations - your raid is complete! Duration:";
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("###.##");
 	static final DecimalFormat POINTS_FORMAT = new DecimalFormat("#,###");
 	private static final String SPLIT_REGEX = "\\s*,\\s*";
@@ -88,7 +106,8 @@ public class RaidsPlugin extends Plugin
 
 	@Inject
 	private InfoBoxManager infoBoxManager;
-
+	@Inject
+	private SkillIconManager iconManager;
 	@Inject
 	private Client client;
 
@@ -100,6 +119,9 @@ public class RaidsPlugin extends Plugin
 
 	@Inject
 	private RaidsOverlay overlay;
+
+	@Inject
+	private RaidsPointsOverlay pointsOverlay;
 
 	@Inject
 	private LayoutSolver layoutSolver;
@@ -124,12 +146,23 @@ public class RaidsPlugin extends Plugin
 
 	@Getter
 	private Raid raid;
+	private RaidsPanel panel;
+	private PointsPanel pointsPanel;
+	private NavigationButton navButton;
+	private NavigationButton navButton2;
 
 	@Getter
 	private boolean inRaidChambers;
 
 	private RaidsTimer timer;
-
+	@Inject
+	private ClientToolbar clientToolbar;
+	public boolean canShow;
+	public boolean timerOverride = false;
+	data raidToAdd = new data();
+	int ticks = 0;
+	int raidSeconds;
+	int backupTime;
 	@Provides
 	RaidsConfig provideConfig(ConfigManager configManager)
 	{
@@ -145,24 +178,81 @@ public class RaidsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		ticks =0;
 		overlayManager.add(overlay);
+		if(config.oldOverlay()){
+			overlayManager.add(pointsOverlay);
+		}
 		updateLists();
 		clientThread.invokeLater(() -> checkRaidPresence(true));
+		panel = injector.getInstance(RaidsPanel.class);
+		pointsPanel = new PointsPanel(this,config,client,iconManager);
+		pointsPanel.init();
+		if(config.soloPanel()){
+			pointsPanel.setSolo(true);
+			pointsPanel.updateSolo();
+		}else{
+			pointsPanel.setSolo(false);
+			pointsPanel.update();
+		}
+		panel.init(config);
+
+		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(this.getClass(), "instancereloadhelper.png");
+		final BufferedImage iconPoint = ImageUtil.getResourceStreamFromClass(this.getClass(), "cox.png");
+
+		navButton = NavigationButton.builder()
+				.tooltip("Raids Reload")
+				.icon(icon)
+				.priority(8)
+				.panel(panel)
+				.build();
+		navButton2 = NavigationButton.builder()
+				.tooltip("CoX Points")
+				.icon(iconPoint)
+				.priority(9)
+				.panel(pointsPanel)
+				.build();
+		clientToolbar.addNavigation(navButton);
+		if(config.ptsPanel()) {
+			clientToolbar.addNavigation(navButton2);
+		}
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
+		clientToolbar.removeNavigation(navButton);
+		clientToolbar.removeNavigation(navButton2);
 		overlayManager.remove(overlay);
 		infoBoxManager.removeInfoBox(timer);
+		overlayManager.remove(pointsOverlay);
 		inRaidChambers = false;
 		raid = null;
 		timer = null;
+
+		final Widget widget = client.getWidget(WidgetInfo.RAIDS_POINTS_INFOBOX);
+		if (widget != null)
+		{
+			widget.setHidden(false);
+		}
 	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
+		if(config.ptsPanel()){
+			if(config.soloPanel()){
+				pointsPanel.updateSolo();
+				pointsPanel.setSolo(true);
+			}else {
+				pointsPanel.update();
+				pointsPanel.setSolo(false);
+			}
+			pointsPanel.revalidate();
+		}
+		if(!config.oldOverlay()){
+			overlayManager.remove(pointsOverlay);
+		}
 		if (!event.getGroup().equals("raids"))
 		{
 			return;
@@ -184,15 +274,110 @@ public class RaidsPlugin extends Plugin
 		checkRaidPresence(false);
 	}
 
+
+	@Subscribe
+	public void onWidgetHiddenChanged(WidgetHiddenChanged event)
+	{
+		if (!inRaidChambers || event.isHidden())
+		{
+			return;
+		}
+
+		Widget widget = event.getWidget();
+
+		if (widget == client.getWidget(WidgetInfo.RAIDS_POINTS_INFOBOX))
+		{
+
+			if(config.oldOverlay()){
+				widget.setHidden(true);
+				overlayManager.add(pointsOverlay);
+			}else{
+				widget.setHidden(false);
+				overlayManager.remove(pointsOverlay);
+			}
+
+		}
+	}
+	@Subscribe
+	public void onGameTick(GameTick tick){
+		ticks++;
+		if(ticks > 20){
+			if(config.soloPanel()){
+				pointsPanel.updateSolo();
+			}else{
+				pointsPanel.update();
+			}
+			ticks = 0;
+		}
+		pointsPanel.updateTime();
+		if(infoBoxManager == null){
+			return;
+		}
+		if(infoBoxManager.getInfoBoxes() == null){
+			return;
+		}
+		if(!inRaidChambers) {
+			timer = null;
+			for (InfoBox i : infoBoxManager.getInfoBoxes()) {
+				if(i != null) {
+					if(i.getPlugin().equals(this)){
+						infoBoxManager.removeInfoBox(i);
+					}
+				}
+			}
+		}
+	}
+	public static int r(double min, double max){
+		double x = (int)(Math.random()*((max-min)+1))+min;
+		return (int)x;
+	}
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
+
+
+
+		String test = Text.removeTags(event.getMessage());
+		if(raidToAdd != null){
+			raidToAdd.cm = false;
+		}
+		if(test.startsWith(KC_MESSAGE)){
+			pointsPanel.raids.get(pointsPanel.raids.size()-1).kc = Integer.parseInt(test.replaceAll("\\D+",""));
+			pointsPanel.raids.get(pointsPanel.raids.size()-1).cm = false;
+
+			if(config.soloPanel()){
+				pointsPanel.updateSolo();
+			}else{
+				pointsPanel.update();
+			}
+
+			//raidToAdd.kc = Integer.parseInt(test.replaceAll("\\D+",""));
+		}
+		if(test.startsWith(KC_MESSAGECM)){
+			pointsPanel.raids.get(pointsPanel.raids.size()-1).kc = Integer.parseInt(test.replaceAll("\\D+",""));
+			pointsPanel.raids.get(pointsPanel.raids.size()-1).cm = true;
+
+			if(config.soloPanel()){
+				pointsPanel.updateSolo();
+			}else{
+				pointsPanel.update();
+			}
+
+			//raidToAdd.kc = Integer.parseInt(test.replaceAll("\\D+",""));
+		}
 		if (inRaidChambers && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION)
 		{
 			String message = Text.removeTags(event.getMessage());
+			if(message.startsWith(RAID_START_MESSAGE)){
+				raidToAdd.start = new Date();
+			}
+			if(message.startsWith(RAID_COMPLETE_MESSAGE)){
+				raidToAdd.finish = new Date();
+			}
 
 			if (config.raidsTimer() && message.startsWith(RAID_START_MESSAGE))
 			{
+
 				timer = new RaidsTimer(spriteManager.getSprite(TAB_QUESTS_BROWN_RAIDING_PARTY, 0), this, Instant.now());
 				infoBoxManager.addInfoBox(timer);
 			}
@@ -202,14 +387,57 @@ public class RaidsPlugin extends Plugin
 				timer.timeFloor();
 			}
 
+
 			if (message.startsWith(RAID_COMPLETE_MESSAGE))
 			{
+				String stripped = message.replaceAll("[^\\d]", "" );
+				backupTime = 0;
+				int sSec = 0;
+				int sMin = 0;
+				int sHour = 0;
+				if(stripped.length() > 1){
+					sSec = Integer.parseInt(stripped.substring(stripped.length()-2));
+					stripped = stripped.substring(0,stripped.length()-2);
+				}
+				if(stripped.length() > 1){
+					sMin = Integer.parseInt(stripped.substring(stripped.length()-2));
+					stripped = stripped.substring(0,stripped.length()-2);
+				}else if(stripped.length() > 0){
+					sMin = Integer.parseInt(stripped.substring(stripped.length()-1));
+					stripped = stripped.substring(0,stripped.length()-1);
+				}
+				if(stripped.length() > 1){
+					sHour = Integer.parseInt(stripped.substring(stripped.length()-2));
+					stripped = stripped.substring(0,stripped.length()-2);
+				}else if(stripped.length() > 0){
+					sHour = Integer.parseInt(stripped.substring(stripped.length()-1));
+					stripped = stripped.substring(0,stripped.length()-1);
+				}
+				backupTime = (sSec) + (sMin *60) + (sHour * 3600);
+				raidToAdd.timeTaken = backupTime;
 				if (timer != null)
 				{
+
 					timer.timeOlm();
+					raidSeconds = backupTime;
+					timerOverride = false;
 					timer.setStopped(true);
 				}
-
+				raidToAdd.personal = client.getVar(Varbits.PERSONAL_POINTS);
+				raidToAdd.total = client.getVar(Varbits.TOTAL_POINTS);
+				raidToAdd.hr = (int) (((float)raidToAdd.personal / (float)raidToAdd.timeTaken) * 3600);
+				if(config.ptsPanel()){
+					pointsPanel.raids.add(raidToAdd);
+					if(!pointsPanel.timer.started){
+						pointsPanel.timer.start(raidToAdd.timeTaken);
+					}
+					if(config.soloPanel()){
+						pointsPanel.updateSolo();
+					}else{
+						pointsPanel.update();
+					}
+					raidToAdd = new data();
+				}
 				if (config.pointsMessage())
 				{
 					int totalPoints = client.getVar(Varbits.TOTAL_POINTS);
@@ -218,40 +446,66 @@ public class RaidsPlugin extends Plugin
 					double percentage = personalPoints / (totalPoints / 100.0);
 
 					String chatMessage = new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("Total points: ")
-						.append(ChatColorType.HIGHLIGHT)
-						.append(POINTS_FORMAT.format(totalPoints))
-						.append(ChatColorType.NORMAL)
-						.append(", Personal points: ")
-						.append(ChatColorType.HIGHLIGHT)
-						.append(POINTS_FORMAT.format(personalPoints))
-						.append(ChatColorType.NORMAL)
-						.append(" (")
-						.append(ChatColorType.HIGHLIGHT)
-						.append(DECIMAL_FORMAT.format(percentage))
-						.append(ChatColorType.NORMAL)
-						.append("%)")
-						.build();
+							.append(ChatColorType.NORMAL)
+							.append("Total points: ")
+							.append(ChatColorType.HIGHLIGHT)
+							.append(POINTS_FORMAT.format(totalPoints))
+							.append(ChatColorType.NORMAL)
+							.append(", Personal points: ")
+							.append(ChatColorType.HIGHLIGHT)
+							.append(POINTS_FORMAT.format(personalPoints))
+							.append(ChatColorType.NORMAL)
+							.append(" (")
+							.append(ChatColorType.HIGHLIGHT)
+							.append(DECIMAL_FORMAT.format(percentage))
+							.append(ChatColorType.NORMAL)
+							.append("%)")
+							.build();
+
 
 					chatMessageManager.queue(QueuedMessage.builder()
-						.type(ChatMessageType.FRIENDSCHATNOTIFICATION)
-						.runeLiteFormattedMessage(chatMessage)
-						.build());
+							.type(ChatMessageType.FRIENDSCHATNOTIFICATION)
+							.runeLiteFormattedMessage(chatMessage)
+							.build());
+					if(config.ptsHr()) {
+						String pts;
+						if(timer != null){
+							pts = POINTS_FORMAT.format(((float)personalPoints / (float)raidSeconds) * 3600);
+						}else{
+							pts = POINTS_FORMAT.format(((float)personalPoints / (float)backupTime) * 3600);
+						}
+
+
+						String chatMessage2 = new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("Pts/Hr: ")
+								.append(ChatColorType.HIGHLIGHT)
+								.append(pts)
+								.build();
+
+						chatMessageManager.queue(QueuedMessage.builder()
+								.type(ChatMessageType.FRIENDSCHATNOTIFICATION)
+								.runeLiteFormattedMessage(chatMessage2)
+								.build());
+					}
 				}
 			}
 		}
 	}
 
-	private void checkRaidPresence(boolean force)
+	public void checkRaidPresence(boolean force)
 	{
+
 		if (client.getGameState() != GameState.LOGGED_IN)
 		{
 			return;
 		}
+		boolean setting = true;
+		if(!force) {
+			setting = client.getVar(Varbits.IN_RAID) == 1;
+		}else{
 
-		boolean setting = client.getVar(Varbits.IN_RAID) == 1;
-
+		}
 		if (force || inRaidChambers != setting)
 		{
 			inRaidChambers = setting;
@@ -263,6 +517,7 @@ public class RaidsPlugin extends Plugin
 
 				if (raid == null)
 				{
+					System.out.println("in cm");
 					log.debug("Failed to build raid");
 					return;
 				}
@@ -277,8 +532,71 @@ public class RaidsPlugin extends Plugin
 
 				raid.updateLayout(layout);
 				RotationSolver.solve(raid.getCombatRooms());
-				overlay.setScoutOverlayShown(true);
+				raidToAdd.raid = getRaid().toRoomString();
 				sendRaidLayoutMessage();
+				Vector<String> puzzles = new Vector<String>();
+				puzzles.clear();
+				for(RaidRoom r : raid.getRooms()){
+					if(r != null){
+						if(r.getPuzzle() != null) {
+							if (r.getPuzzle().getName() != null) {
+								puzzles.add(r.getPuzzle().getName());
+							}
+						}
+					}
+				}
+				//Push puzzles to api
+				String urlString = "http://lyzrds.com/puzzles/api.php";
+				boolean add = true;
+				if(puzzles.size() > 3 ){
+					add = false;
+				}
+				if(puzzles.size() == 0){
+					add = false;
+				}
+				switch(puzzles.size()){
+					case 1:
+						urlString = urlString + "?p1=" + puzzles.get(0);
+						break;
+					case 2:
+						urlString = urlString + "?p1=" + puzzles.get(0) + "&p2=" + puzzles.get(1);
+						break;
+					case 3:
+						urlString = urlString + "?p1=" + puzzles.get(0) + "&p2=" + puzzles.get(1) + "&p3=" + puzzles.get(2);
+						break;
+
+				}
+				urlString = urlString +"&r=" + getRaid().getLayout().toCodeString() + ":" + getRaid().toRoomString();
+				//System.out.println(urlString +"&r=" + getRaid().getLayout().toCodeString() +":"+ getRaid().toRoomString());
+				if(add && canShow) {
+					URL oracle = null;
+					try {
+						oracle = new URL(urlString.replace(" ",""));
+					} catch (MalformedURLException e) {
+						e.printStackTrace();
+					}
+					URLConnection yc = null;
+					try {
+						yc = oracle.openConnection();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					BufferedReader in = null;
+					try {
+						in = new BufferedReader(new InputStreamReader(
+								yc.getInputStream()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					try {
+						in.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
+				}
+				canShow = true;
+				overlay.setScoutOverlayShown(true);
 			}
 			else if (!config.scoutOverlayAtBank())
 			{
@@ -290,6 +608,7 @@ public class RaidsPlugin extends Plugin
 		if (client.getVar(VarPlayer.IN_RAID_PARTY) == -1 && (!inRaidChambers || !config.scoutOverlayInRaid()))
 		{
 			overlay.setScoutOverlayShown(false);
+			canShow = true;
 		}
 	}
 
@@ -334,10 +653,13 @@ public class RaidsPlugin extends Plugin
 			infoBoxManager.removeInfoBox(timer);
 		}
 
-		if (!inRaidChambers)
+		if (!inRaidChambers && !timerOverride)
 		{
+			infoBoxManager.removeInfoBox(timer);
 			timer = null;
+
 		}
+		timerOverride = false;
 	}
 
 	private void updateLists()

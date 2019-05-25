@@ -94,5 +94,5 @@ class ObjectIndicatorsOverlay extends Overlay
 		}
 
 		return null;
-	}
-}
+		}
+		}

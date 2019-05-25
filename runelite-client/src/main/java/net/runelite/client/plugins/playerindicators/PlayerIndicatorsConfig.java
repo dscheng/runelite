@@ -77,7 +77,19 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 4,
+			position = 4,
+			keyName = "drawOffline",
+			name = "Highlight offline friends",
+			description = "Configures whether or not offline friends should be highlighted"
+	)
+	default boolean drawOffline()
+	{
+		return true;
+	}
+
+
+	@ConfigItem(
+		position = 5,
 		keyName = "drawClanMemberNames",
 		name = "Highlight clan members",
 		description = "Configures whether or clan members should be highlighted"
@@ -88,7 +100,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 5,
+		position = 6,
 		keyName = "clanMemberColor",
 		name = "Clan member color",
 		description = "Color of clan members"
@@ -99,7 +111,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 6,
+		position = 7,
 		keyName = "drawTeamMemberNames",
 		name = "Highlight team members",
 		description = "Configures whether or not team members should be highlighted"
@@ -110,7 +122,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 7,
+		position = 8,
 		keyName = "teamMemberColor",
 		name = "Team member color",
 		description = "Color of team members"
@@ -121,7 +133,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 8,
+		position = 9,
 		keyName = "drawNonClanMemberNames",
 		name = "Highlight non-clan members",
 		description = "Configures whether or not non-clan members should be highlighted"
@@ -132,7 +144,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 9,
+		position = 10,
 		keyName = "nonClanMemberColor",
 		name = "Non-clan member color",
 		description = "Color of non-clan member names"
@@ -143,7 +155,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 10,
+		position = 11,
 		keyName = "drawPlayerTiles",
 		name = "Draw tiles under players",
 		description = "Configures whether or not tiles under highlighted players should be drawn"
@@ -154,7 +166,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 11,
+		position = 12,
 		keyName = "playerNamePosition",
 		name = "Name position",
 		description = "Configures the position of drawn player names, or if they should be disabled"
@@ -165,7 +177,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 12,
+		position = 13,
 		keyName = "drawMinimapNames",
 		name = "Draw names on minimap",
 		description = "Configures whether or not minimap names for players with rendered names should be drawn"
@@ -176,7 +188,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 13,
+		position = 14,
 		keyName = "colorPlayerMenu",
 		name = "Colorize player menu",
 		description = "Color right click menu for players"
@@ -187,7 +199,7 @@ public interface PlayerIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 14,
+		position = 15,
 		keyName = "clanMenuIcons",
 		name = "Show clan ranks",
 		description = "Add clan rank to right click menu and next to player names"

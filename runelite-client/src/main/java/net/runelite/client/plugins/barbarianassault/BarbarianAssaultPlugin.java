@@ -28,15 +28,12 @@ package net.runelite.client.plugins.barbarianassault;
 import com.google.inject.Provides;
 import java.awt.Font;
 import java.awt.Image;
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.ItemID;
-import net.runelite.api.Varbits;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.VarbitChanged;
-import net.runelite.api.events.WidgetLoaded;
+
+import net.runelite.api.*;
+import net.runelite.api.events.*;
 import net.runelite.api.kit.KitType;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
@@ -63,7 +60,7 @@ public class BarbarianAssaultPlugin extends Plugin
 	private static final int BA_WAVE_NUM_INDEX = 2;
 	private static final String START_WAVE = "1";
 	private static final String ENDGAME_REWARD_NEEDLE_TEXT = "<br>5";
-
+	private final List<MenuEntry> entries = new ArrayList<>();
 	private Font font;
 	private Image clockImage;
 	private int inGameBit = 0;
@@ -123,6 +120,38 @@ public class BarbarianAssaultPlugin extends Plugin
 			}
 		}
 	}
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded event)
+	{
+		if (config.removeWrong() && overlay.getCurrentRound() != null && event.getTarget().endsWith("horn"))
+		{
+			MenuEntry[] menuEntries = client.getMenuEntries();
+			WidgetInfo callInfo = overlay.getCurrentRound().getRoundRole().getCall();
+			Widget callWidget = client.getWidget(callInfo);
+			String call = Calls.getOption(callWidget.getText());
+			MenuEntry correctCall = null;
+
+			entries.clear();
+			for (MenuEntry entry : menuEntries)
+			{
+				String option = entry.getOption();
+				if (option.equals(call))
+				{
+					correctCall = entry;
+				}
+				else if (!option.startsWith("Tell-"))
+				{
+					entries.add(entry);
+				}
+			}
+
+			if (correctCall != null)
+			{
+				entries.add(correctCall);
+				client.setMenuEntries(entries.toArray(new MenuEntry[entries.size()]));
+			}
+		}
+	}
 
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
@@ -143,6 +172,7 @@ public class BarbarianAssaultPlugin extends Plugin
 			}
 		}
 	}
+
 
 	@Subscribe
 	public void onGameTick(GameTick event)

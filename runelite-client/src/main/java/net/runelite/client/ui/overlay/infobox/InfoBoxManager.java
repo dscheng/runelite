@@ -163,4 +163,5 @@ public class InfoBoxManager
 			.compare(b1.getPlugin().getClass().getAnnotation(PluginDescriptor.class).name(), b2.getPlugin().getClass().getAnnotation(PluginDescriptor.class).name())
 			.result());
 	}
+
 }

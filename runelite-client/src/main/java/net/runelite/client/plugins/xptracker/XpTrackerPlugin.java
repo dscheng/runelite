@@ -254,6 +254,7 @@ public class XpTrackerPlugin extends Plugin
 		int currentXp = client.getSkillExperience(skill);
 		xpState.resetSkill(skill, currentXp);
 		xpPanel.resetSkill(skill);
+		xpPanel.updateTotal(xpState.getTotalSnapshot());
 	}
 
 	/**
@@ -264,8 +265,7 @@ public class XpTrackerPlugin extends Plugin
 	{
 		for (Skill s : Skill.values())
 		{
-			// Overall is not reset from resetting individual skills
-			if (skill != s && s != Skill.OVERALL)
+			if (skill != s)
 			{
 				resetSkillState(s);
 			}

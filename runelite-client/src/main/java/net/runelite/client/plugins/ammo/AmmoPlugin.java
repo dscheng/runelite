@@ -110,7 +110,6 @@ public class AmmoPlugin extends Plugin
 
 		if (items.length <= EquipmentInventorySlot.AMMO.getSlotIdx())
 		{
-			removeInfobox();
 			return;
 		}
 
@@ -119,7 +118,8 @@ public class AmmoPlugin extends Plugin
 
 		if (!comp.isStackable())
 		{
-			removeInfobox();
+			infoBoxManager.removeInfoBox(counterBox);
+			counterBox = null;
 			return;
 		}
 
@@ -134,15 +134,9 @@ public class AmmoPlugin extends Plugin
 			return;
 		}
 
-		removeInfobox();
+		infoBoxManager.removeInfoBox(counterBox);
 		final BufferedImage image = itemManager.getImage(item.getId(), 5, false);
 		counterBox = new AmmoCounter(this, item.getId(), item.getQuantity(), comp.getName(), image);
 		infoBoxManager.addInfoBox(counterBox);
-	}
-
-	private void removeInfobox()
-	{
-		infoBoxManager.removeInfoBox(counterBox);
-		counterBox = null;
 	}
 }

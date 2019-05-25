@@ -153,13 +153,55 @@ public interface RaidsConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 11,
-		keyName = "layoutMessage",
-		name = "Send raid layout message when entering raid",
-		description = "Sends game message with raid layout on entering new raid"
+			position = 12,
+			keyName = "ptsHr",
+			name = "Enable points per hour message",
+			description = "Enable the message"
+	)
+	default boolean ptsHr()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			position = 11,
+			keyName = "layoutMessage",
+			name = "Send raid layout message when entering raid",
+			description = "Sends game message with raid layout on entering new raid"
 	)
 	default boolean layoutMessage()
 	{
 		return true;
+	}
+	@ConfigItem(
+			position = 13,
+			keyName = "ptsPanelUpdate",
+			name = "Enable points panel",
+			description = "Enable the panel"
+	)
+	default boolean ptsPanel()
+	{
+		return true;
+	}
+	@ConfigItem(
+			position = 14,
+			keyName = "soloPanel",
+			name = "Solo Points Only",
+			description = "Display Only Solo Points Info"
+	)
+	default boolean soloPanel()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			position = 15,
+			keyName = "oldOverlay",
+			name = "Old Points Overlay",
+			description = "Use the old points overlay"
+	)
+	default boolean oldOverlay()
+	{
+		return false;
 	}
 }

@@ -82,4 +82,16 @@ public interface ZoomConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+			keyName = "reallyexpand",
+			name = "Expand inner zoom limit further",
+			description = "This may crash your client on resizable",
+			position = 5
+	)
+	default boolean expand()
+	{
+		return false;
+	}
+
 }

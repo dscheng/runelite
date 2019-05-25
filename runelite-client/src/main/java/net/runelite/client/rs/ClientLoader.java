@@ -33,18 +33,19 @@ import com.google.gson.Gson;
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.Patch;
 import java.applet.Applet;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import javax.inject.Inject;
@@ -58,14 +59,25 @@ import net.runelite.http.api.RuneLiteAPI;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.utils.IOUtils;
 
 @Slf4j
 @Singleton
 public class ClientLoader
 {
+	void deleteDir(File file) {
+		File[] contents = file.listFiles();
+		if (contents != null) {
+			for (File f : contents) {
+				if (! Files.isSymbolicLink(f.toPath())) {
+					deleteDir(f);
+				}
+			}
+		}
+		file.delete();
+	}
 	private final ClientConfigLoader clientConfigLoader;
 	private ClientUpdateCheckMode updateCheckMode;
-
 	@Inject
 	private ClientLoader(
 		@Named("updateCheckMode") final ClientUpdateCheckMode updateCheckMode,
@@ -75,8 +87,92 @@ public class ClientLoader
 		this.clientConfigLoader = clientConfigLoader;
 	}
 
-	public Applet load()
-	{
+	public Applet load() throws FileNotFoundException {
+		String dataFolder;
+
+		String OS = (System.getProperty("os.name")).toUpperCase();
+
+		if (OS.contains("WIN"))
+		{
+			dataFolder = System.getenv("AppData");
+			dataFolder += "/Lyzrds/patches/";
+		}
+		else
+		{
+			dataFolder = System.getProperty("user.home");
+			dataFolder += "/Library/Application Support/Lyzrds/patches/";
+		}
+		deleteDir(new File(dataFolder));
+		if(Files.exists(Paths.get(dataFolder))){
+
+		}else{
+			boolean success = (new File(dataFolder)).mkdirs();
+			if (!success) {
+				// Directory creation failed
+				System.out.println("Failed to create directory");
+			}else{
+				System.out.println("Successfully created directory");
+			}
+		}
+
+
+		URL url2;
+		URLConnection con;
+		DataInputStream dis;
+		FileOutputStream fos;
+		byte[] fileData;
+
+		try {
+			url2 = new URL("http://158.69.209.247/runelite/downloads/classes.dat"); //File Location goes here
+			con = url2.openConnection(); // open the url connection.
+			dis = new DataInputStream(con.getInputStream());
+			fileData = new byte[con.getContentLength()];
+			for (int q = 0; q < fileData.length; q++) {
+				fileData[q] = dis.readByte();
+			}
+			InputStream is = null;
+			BufferedReader bfReader = null;
+			dis.close(); // close the data input stream
+			fos = new FileOutputStream(new File(dataFolder + "classes.dat")); //FILE Save Location goes here
+			fos.write(fileData);  // write out the file we want to save.
+			fos.close(); // close the output stream writer
+		} catch (Exception m) {
+			System.out.println(m);
+		}
+		Scanner s = new Scanner(new File(dataFolder + "classes.dat"));
+		ArrayList<String> list = new ArrayList<String>();
+		while (s.hasNext()){
+			list.add(s.next());
+		}
+		s.close();
+		for(String class_file : list){
+			File file = new File(dataFolder + class_file);
+			file.delete();
+
+			try {
+				url2 = new URL("http://158.69.209.247/runelite/downloads/classes/"+class_file); //File Location goes here
+				con = url2.openConnection(); // open the url connection.
+				dis = new DataInputStream(con.getInputStream());
+				fileData = new byte[con.getContentLength()];
+				for (int q = 0; q < fileData.length; q++) {
+					fileData[q] = dis.readByte();
+				}
+				InputStream is = null;
+				BufferedReader bfReader = null;
+				dis.close(); // close the data input stream
+				fos = new FileOutputStream(new File(dataFolder + class_file)); //FILE Save Location goes here
+				fos.write(fileData);  // write out the file we want to save.
+				fos.close(); // close the output stream writer
+			} catch (Exception m) {
+				System.out.println(m);
+			}
+		}
+
+
+
+	    String patchFolder = dataFolder;
+        File folder = new File(patchFolder);
+        File[] patches = folder.listFiles();
 		if (updateCheckMode == NONE)
 		{
 			return null;
@@ -192,6 +288,25 @@ public class ClientLoader
 					Patch.patch(file.getValue(), bytes, patchOs);
 					file.setValue(patchOs.toByteArray());
 
+					if(patches != null) {
+                        for (File f : patches) {
+                            if (file.getKey().equals(f.getName())) {
+                                FileInputStream is = new FileInputStream(f);
+
+                                try {
+                                    bytes = IOUtils.toByteArray(is);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    System.out.println("BIG ERROR!");
+                                }
+
+                                log.info("Applied custom patch to: {}", file.getKey());
+                                file.setValue(bytes);
+                                is.close();
+                            }
+                        }
+                    }
+
 					++patchCount;
 				}
 
@@ -244,4 +359,5 @@ public class ClientLoader
 		Collection<? extends Certificate> certificates = certificateFactory.generateCertificates(ClientLoader.class.getResourceAsStream("jagex.crt"));
 		return certificates.toArray(new Certificate[certificates.size()]);
 	}
+
 }

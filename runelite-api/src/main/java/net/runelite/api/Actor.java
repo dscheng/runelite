@@ -112,6 +112,7 @@ public interface Actor extends Renderable
 	 * @return the orientation
 	 * @see net.runelite.api.coords.Angle
 	 */
+
 	int getOrientation();
 
 	/**
@@ -145,6 +146,11 @@ public interface Actor extends Renderable
 	 * @return the graphic of the actor
 	 * @see GraphicID
 	 */
+
+	int getActionFrame();
+	int getActionFrameCycle();
+	int [] getPathX();
+	int [] getPathY();
 	int getGraphic();
 
 	@VisibleForDevtools
@@ -246,4 +252,6 @@ public interface Actor extends Renderable
 	 * @param overheadText the overhead text
 	 */
 	void setOverheadText(String overheadText);
+
+
 }

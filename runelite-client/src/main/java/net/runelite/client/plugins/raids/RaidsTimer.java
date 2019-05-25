@@ -38,7 +38,7 @@ public class RaidsTimer extends InfoBox
 {
 	private final Instant startTime;
 	private Instant floorTime;
-	private LocalTime time;
+	public LocalTime time;
 	private LocalTime firstFloorTime;
 	private LocalTime secondFloorTime;
 	private LocalTime thirdFloorTime;
@@ -67,19 +67,26 @@ public class RaidsTimer extends InfoBox
 		{
 			secondFloorTime = LocalTime.ofSecondOfDay(elapsed.getSeconds());
 		}
-		else if (thirdFloorTime == null)
-		{
+		else if(thirdFloorTime == null){
+
 			thirdFloorTime = LocalTime.ofSecondOfDay(elapsed.getSeconds());
 		}
 
 		floorTime = Instant.now();
 	}
 
+
+	public int getSeconds(){
+		return time.getSecond() + (time.getMinute() * 60) + (time.getHour() *3600);
+	}
+
+
 	public void timeOlm()
 	{
 		Duration elapsed = Duration.between(floorTime, Instant.now());
 		olmTime = LocalTime.ofSecondOfDay(elapsed.getSeconds());
 	}
+
 
 	@Override
 	public String getText()
@@ -133,8 +140,8 @@ public class RaidsTimer extends InfoBox
 			builder.append(secondFloorTime.format(DateTimeFormatter.ofPattern("mm:ss")));
 		}
 
-		if (thirdFloorTime != null)
-		{
+		if(thirdFloorTime != null){
+
 			builder.append("</br>Third floor: ");
 			builder.append(thirdFloorTime.format(DateTimeFormatter.ofPattern("mm:ss")));
 		}

@@ -27,16 +27,15 @@ package net.runelite.client.plugins.menuentryswapper;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.Setter;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
-import net.runelite.api.NPC;
+import net.runelite.api.*;
 import net.runelite.api.events.ConfigChanged;
 import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.MenuEntryAdded;
@@ -70,7 +69,7 @@ public class MenuEntrySwapperPlugin extends Plugin
 	private static final String SAVE = "Save";
 	private static final String RESET = "Reset";
 	private static final String MENU_TARGET = "Shift-click";
-
+	private List<String> bankItemNames = new ArrayList<>();
 	private static final String CONFIG_GROUP = "shiftclick";
 	private static final String ITEM_KEY_PREFIX = "item_";
 
@@ -370,12 +369,97 @@ public class MenuEntrySwapperPlugin extends Plugin
 		{
 			return;
 		}
+		if (config.swapImps() && target.contains("impling")){
+
+			if (client.getItemContainer(InventoryID.BANK)!=null){
+				bankItemNames = new ArrayList<>();
+				for (Item i : Objects.requireNonNull(client.getItemContainer(InventoryID.BANK)).getItems()) {
+					bankItemNames.add(client.getItemDefinition((i.getId())).getName());}
+			}
+			List<String> invItemNames = new ArrayList<>();
+			if (target.contains("gourmet")){
+				if (client.getItemContainer(InventoryID.INVENTORY)!=null) {
+					for (Item i : Objects.requireNonNull(client.getItemContainer(InventoryID.INVENTORY)).getItems()) {
+						invItemNames.add(client.getItemDefinition((i.getId())).getName());
+					}
+					if ((invItemNames.contains("Clue scroll (easy)") || bankItemNames.contains("Clue scroll (easy)")) && option.contains("loot")){
+						swap("use",option,target,true);
+					}
+					else if(!(invItemNames.contains("Clue scroll (easy)") || !bankItemNames.contains("Clue scroll (easy)")) && option.contains("use")){
+						swap("loot",option,target,true);
+					}
+				}
+			}
+			else if (target.contains("eclectic")){
+				if (client.getItemContainer(InventoryID.INVENTORY)!=null) {
+					for (Item i : Objects.requireNonNull(client.getItemContainer(InventoryID.INVENTORY)).getItems()) {
+						invItemNames.add(client.getItemDefinition((i.getId())).getName());
+					}
+					if ((invItemNames.contains("Clue scroll (medium)") || bankItemNames.contains("Clue scroll (medium)")) && option.contains("loot")){
+						swap("use",option,target,true);
+					}
+					else if(!(invItemNames.contains("Clue scroll (medium)") || !bankItemNames.contains("Clue scroll (medium)")) && option.contains("use")){
+						swap("loot",option,target,true);
+					}
+				}
+			}
+			else if (target.contains("magpie")||target.contains("nature")){
+				if (client.getItemContainer(InventoryID.INVENTORY)!=null) {
+					for (Item i : Objects.requireNonNull(client.getItemContainer(InventoryID.INVENTORY)).getItems()) {
+						invItemNames.add(client.getItemDefinition((i.getId())).getName());
+					}
+					if ((invItemNames.contains("Clue scroll (hard)") || bankItemNames.contains("Clue scroll (hard)")) && option.contains("loot")){
+						swap("use",option,target,true);
+					}
+					else if(!(invItemNames.contains("Clue scroll (hard)") || !bankItemNames.contains("Clue scroll (hard)")) && option.contains("use")){
+						swap("loot",option,target,true);
+					}
+				}
+			}
+			else if (target.contains("dragon")){
+				if (client.getItemContainer(InventoryID.INVENTORY)!=null) {
+					for (Item i : Objects.requireNonNull(client.getItemContainer(InventoryID.INVENTORY)).getItems()) {
+						invItemNames.add(client.getItemDefinition((i.getId())).getName());
+					}
+					if ((invItemNames.contains("Clue scroll (elite)") || bankItemNames.contains("Clue scroll (elite)")) && option.contains("loot")){
+						swap("use",option,target,true);
+					}
+					else if(!(invItemNames.contains("Clue scroll (elite)") || !bankItemNames.contains("Clue scroll (elite)")) && option.contains("use")){
+						swap("loot",option,target,true);
+					}
+				}
+			}
+		}
+
+		if(option.equals("value")){
+			switch(config.swapBuy50()){
+				case Buy_1:
+					swap("buy 1",option,target,false);
+				break;
+				case Buy_5:
+					swap("buy 5",option,target,false);
+				break;
+				case Buy_10:
+					swap("buy 10",option,target,false);
+					break;
+				case Buy_50:
+					swap("buy 50",option,target,false);
+					break;
+				case Value:
+				default:
+					break;
+			}
+		}
 
 		if (option.equals("talk-to"))
 		{
-			if (config.swapPickpocket() && target.contains("h.a.m."))
+			if (config.swapPickpocket())
 			{
-				swap("pickpocket", option, target, true);
+				if(shiftModifier) {
+					swap("knock-out", option, target, true);
+				}else{
+					swap("pickpocket", option, target, true);
+				}
 			}
 
 			if (config.swapAbyssTeleport() && target.contains("mage of zamorak"))
@@ -388,10 +472,6 @@ public class MenuEntrySwapperPlugin extends Plugin
 				swap("bank", option, target, true);
 			}
 
-			if (config.swapContract())
-			{
-				swap("contract", option, target, true);
-			}
 
 			if (config.swapExchange())
 			{
@@ -448,6 +528,10 @@ public class MenuEntrySwapperPlugin extends Plugin
 			if (config.swapQuick())
 			{
 				swap("quick-travel", option, target, true);
+			}
+			if (config.swapContract())
+			{
+				swap("contract", option, target, true);
 			}
 		}
 		else if (config.swapTravel() && option.equals("pass") && target.equals("energy barrier"))
@@ -569,6 +653,10 @@ public class MenuEntrySwapperPlugin extends Plugin
 		else if (config.swapBones() && option.equals("bury"))
 		{
 			swap("use", option, target, true);
+		}
+		else if (config.swapBALadder() && option.equals("climb-down") && target.equals("ladder"))
+		{
+			swap("quick-start", option, target, true);
 		}
 	}
 

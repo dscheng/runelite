@@ -43,7 +43,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.ImageUtil;
 
-class WorldTableHeader extends JPanel
+public class WorldTableHeader extends JPanel
 {
 	private static final ImageIcon ARROW_UP;
 	private static final ImageIcon HIGHLIGHT_ARROW_DOWN;

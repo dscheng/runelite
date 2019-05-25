@@ -184,8 +184,8 @@ public interface MenuEntrySwapperConfig extends Config
 
 	@ConfigItem(
 		keyName = "swapPickpocket",
-		name = "Pickpocket on H.A.M.",
-		description = "Swap Talk-to with Pickpocket on H.A.M members"
+		name = "Pickpocket",
+		description = "Swap Talk-to with Pickpocket"
 	)
 	default boolean swapPickpocket()
 	{
@@ -205,7 +205,7 @@ public interface MenuEntrySwapperConfig extends Config
 	@ConfigItem(
 		keyName = "swapPrivate",
 		name = "Private",
-		description = "Swap Shared with Private on the Chambers of Xeric storage units."
+		description = "Swap Shared with Private on the Chamber of Xeric storage units."
 	)
 	default boolean swapPrivate()
 	{
@@ -213,19 +213,9 @@ public interface MenuEntrySwapperConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "swapPick",
-		name = "Pick",
-		description = "Swap Pick with Pick-lots of the Gourd tree in the Chambers of Xeric"
-	)
-	default boolean swapPick()
-	{
-		return false;
-	}
-
-	@ConfigItem(
 		keyName = "swapQuick",
-		name = "Quick Pass/Open/Start/Travel",
-		description = "Swap Pass with Quick-Pass, Open with Quick-Open, Ring with Quick-Start and Talk-to with Quick-Travel"
+		name = "Quick Pass/Start/Travel",
+		description = "Swap Pass with Quick-Pass, Ring with Quick-Start and Talk-to with Quick-Travel"
 	)
 	default boolean swapQuick()
 	{
@@ -278,6 +268,42 @@ public interface MenuEntrySwapperConfig extends Config
 		description = "Swap Talk-to with Travel, Take-boat, Pay-fare, Charter on NPC<br>Example: Squire, Monk of Entrana, Customs officer, Trader Crewmember"
 	)
 	default boolean swapTravel()
+	{
+		return true;
+	}
+	@ConfigItem(
+			keyName = "swapStore",
+			name = "Store",
+			description = "Changes stores default options"
+	)
+	default Shop swapBuy50()
+	{
+		return Shop.Value;
+	}
+	@ConfigItem(
+			keyName = "swapPick",
+			name = "Pick",
+			description = "Swap Pick with Pick-lots of the Gourd tree in the Chambers of Xeric"
+	)
+	default boolean swapPick()
+	{
+		return true;
+	}
+	@ConfigItem(
+			keyName = "swapBALadder",
+			name = "BA Ladder",
+			description = "Swap Climb-down with Quick-start at the Barbarian Assault wave lobbies."
+	)
+	default boolean swapBALadder()
+	{
+		return true;
+	}
+	@ConfigItem(
+			keyName = "swapImps",
+			name = "Impling Jars",
+			description = "Don't open implings if bank has a clue"
+	)
+	default boolean swapImps()
 	{
 		return true;
 	}

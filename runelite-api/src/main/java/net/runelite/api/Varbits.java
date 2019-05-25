@@ -60,6 +60,20 @@ public enum Varbits
 	RUNE_POUCH_AMOUNT3(1626),
 
 	/**
+	 * 0 = standard
+	 * 1 = ancients
+	 * 2 = lunars
+	 * 3 = arrceus
+	 **/
+	SPELLBOOK_ID(4070),
+
+	/**
+	 * 0 = no
+	 * 1 = yes
+	 **/
+	SPELLBOOK_HIDDEN(6718),
+
+	/**
 	 * Prayers
 	 */
 	QUICK_PRAYER(4103),
@@ -282,12 +296,12 @@ public enum Varbits
 	TOTAL_POINTS(5431),
 	PERSONAL_POINTS(5422),
 	RAID_PARTY_SIZE(5424),
-
+	CM(6385),
 	/**
 	 * Theatre of Blood 1=In Party, 2=Inside/Spectator, 3=Dead Spectating
 	 */
 	THEATRE_OF_BLOOD(6440),
-
+	BLOAT_DOOR(6447),
 	/**
 	 * Nightmare Zone
 	 */
@@ -469,6 +483,9 @@ public enum Varbits
 	BANK_TAB_SEVEN_COUNT(4177),
 	BANK_TAB_EIGHT_COUNT(4178),
 	BANK_TAB_NINE_COUNT(4179),
+	FILTER_SPELLBOOK(6718),
+	SPELLBOOK(4070),
+
 
 	/**
 	 * Type of GE offer currently being created
@@ -480,7 +497,9 @@ public enum Varbits
 	/**
 	 * The active tab within the quest interface
 	 */
-	QUEST_TAB(8168);
+	QUEST_TAB(8168),
+	AUTO_CAST_SPELL(276);
+
 
 	/**
 	 * The raw varbit ID.
